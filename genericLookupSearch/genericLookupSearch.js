@@ -55,14 +55,14 @@ import { LightningElement, api, track } from 'lwc';
 import searchRecords from '@salesforce/apex/LookupSearchController.searchRecords';
 
 export default class GenericLookupSearch extends LightningElement {
-    @api objectApiName = ''; //Account - Default object API name, can be overridden
-    @api fieldApiName = ''; // Name - Default field to use for displaying results (primary display field)
-    @api iconName = ''; //standard:account
-    @api label = ''; // Account
-    @api placeholder = ''; //Search...
-    @api messageWhenValueMissing = ''; //Complete this field.
+    @api objectApiName = 'Account'; //Account - Default object API name, can be overridden
+    @api fieldApiName = 'Name'; // Name - Default field to use for displaying results (primary display field)
+    @api iconName = 'standard:account'; //standard:account
+    @api label = 'Account'; // Account
+    @api placeholder = 'Search...'; //Search...
+    @api messageWhenValueMissing = 'Complete this field.'; //Complete this field.
     @api isRequired = false;
-    @api recordType = ''; //Account- Default record type, can be overridden; developer name is needed here
+    @api recordType = 'Account'; //Account- Default record type, can be overridden; developer name is needed here
     @api multiSelect = false; // Allow multiple selections (defaults to false)
     @api showSelectedPills = false; // Whether to show selected pills below the input
     
