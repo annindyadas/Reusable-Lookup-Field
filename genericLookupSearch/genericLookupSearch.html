@@ -1,0 +1,137 @@
+<template>
+    <div class="slds-form-element" onclick={handleContainerClick}>
+        <label if:true={label} class="slds-form-element__label">
+            <abbr if:true={isRequired} class="slds-required" title="required">*</abbr>
+            {label}
+        </label>
+        <div class="slds-form-element__control">
+            <div class="slds-combobox_container">
+                <div class="slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click slds-is-open">
+                    <!-- Search Input - Conditionally show selected value for single-select mode -->
+                    <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right">
+                        <!-- When in single-select mode, no pills, and has a selection, use the SLDS Lookup pattern -->
+                        <template if:true={showInlineSelection}>
+                            <!-- Using SLDS lookup with selection pattern -->
+                            <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_left-right lookup-with-selection">
+                                <span class="slds-icon_container slds-combobox__input-entity-icon" title={label}>
+                                    <lightning-icon icon-name={iconName} size="x-small"></lightning-icon>
+                                </span>
+                                <input
+                                    id="selected-value-inline"
+                                    class="slds-input slds-combobox__input slds-combobox__input-value"
+                                    type="text"
+                                    readonly
+                                    value={selectedRecord.name}
+                                    onclick={handleInputClick}
+                                />
+                                <button 
+                                    class="slds-button slds-button_icon slds-input__icon slds-input__icon_right" 
+                                    title="Remove selected option"
+                                    onclick={handleClearInlineSelection}
+                                    type="button">
+                                    <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                                    <span class="slds-assistive-text">Remove selected option</span>
+                                </button>
+                            </div>
+                        </template>
+                        
+                        <!-- When searching or no selection in single-select mode -->
+                        <template if:false={showInlineSelection}>
+                            <lightning-input
+                                required={isRequired}
+                                type="search"
+                                variant="label-hidden"
+                                value={searchTerm}
+                                placeholder={placeholder}
+                                onchange={handleInputChange}
+                                onfocus={handleInputFocus}
+                                onclick={handleInputChange}
+                                icon-name={iconName}
+                            ></lightning-input>
+                        </template>
+                    </div>
+
+                    <!-- Dropdown Results -->
+                    <div if:true={searchTerm} class="slds-dropdown slds-dropdown_length-5 slds-dropdown_fluid" role="listbox">
+                        <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                            <!-- Loading Indicator -->
+                            <div if:true={isSearching} class="slds-align_absolute-center slds-p-around_small">
+                                <lightning-spinner size="small" variant="brand"></lightning-spinner>
+                                <span class="slds-p-left_small">Searching...</span>
+                            </div>
+                            
+                            <!-- No Results Message -->
+                            <div if:true={showNoResults} class="slds-text-color_weak slds-text-align_center slds-p-around_small">
+                                No results found for "{searchTerm}"
+                            </div>
+                            
+                            <!-- Search Results -->
+                            <template for:each={searchResults} for:item="result">
+                                <li key={result.Id} class="slds-listbox__item" 
+                                    onclick={handleResultSelect} 
+                                    data-id={result.Id}
+                                    data-name={result.displayValue}>
+                                    <div class="slds-media slds-listbox__option slds-listbox__option_entity" role="option">
+                                        <lightning-icon icon-name={iconName} size="small" class="slds-media__figure"></lightning-icon>
+                                        <span class="slds-media__body">
+                                            <div class="slds-truncate slds-m-bottom_xx-small">{result.displayValue}</div>
+                                            <!-- Display additional info fields if they exist and have values -->
+                                            <!-- <template if:true={result.additionalInfo}>
+                                                <div class="slds-grid slds-wrap">
+                                                    <template for:each={result.additionalInfo} for:item="info">
+                                                        <span key={info.field} class="slds-truncate slds-text-body_small slds-text-color_weak slds-p-right_small">
+                                                            {info.value}
+                                                        </span>
+                                                    </template>
+                                                </div>
+                                            </template> -->
+                                        </span>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Selected Records Pills - Moved below the input field -->
+                <template if:true={showPills}>
+                    <div class="slds-pill_container slds-p-around_xx-small slds-m-top_x-small slds-border_top slds-border_bottom slds-border_right slds-border_left slds-border_radius-medium pills-container">
+                        <template if:false={isMultiSelect}>
+                            <!-- Single selection mode - only ever show one pill -->
+                            <template if:true={selectedRecord}>
+                                <span class="slds-pill" role="option" title={selectedRecord.name}>
+                                    <lightning-icon icon-name={iconName} size="x-small" class="slds-m-right_xx-small"></lightning-icon>
+                                    <span class="slds-pill__label">{selectedRecord.name}</span>
+                                    <lightning-button-icon 
+                                        icon-name="utility:close"
+                                        variant="bare"
+                                        title="Remove"
+                                        data-record-id={selectedRecord.id}
+                                        onclick={handleClearSelection}>
+                                    </lightning-button-icon>
+                                </span>
+                            </template>
+                        </template>
+                        
+                        <template if:true={isMultiSelect}>
+                            <!-- Multi-selection mode - show all selected records -->
+                            <template for:each={selectedRecords} for:item="record">
+                                <span key={record.id} class="slds-pill" role="option" title={record.name}>
+                                    <lightning-icon icon-name={iconName} size="x-small" class="slds-m-right_xx-small"></lightning-icon>
+                                    <span class="slds-pill__label">{record.name}</span>
+                                    <lightning-button-icon 
+                                        icon-name="utility:close"
+                                        variant="bare"
+                                        title="Remove"
+                                        data-record-id={record.id}
+                                        onclick={handleClearSelection}>
+                                    </lightning-button-icon>
+                                </span>
+                            </template>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</template>
