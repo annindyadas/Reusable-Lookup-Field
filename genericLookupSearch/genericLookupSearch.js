@@ -73,8 +73,8 @@ export default class GenericLookupSearch extends LightningElement {
     @track isSearching = false;
     @track hasRendered = false; // Track if component has been rendered
 
-    @api additionalInfoFields = 'DUNS_BUS_START_YR__c, DBG_DUNSNumber__c'; // Comma-separated list of additional fields to display in search results
-    @api searchFields = 'Name, DBG_DUNSNumber__c'; // Comma-separated list of fields to search against in the SOQL query
+    @api additionalInfoFields = 'Industry, Location__c'; // Comma-separated list of additional fields to display in search results
+    @api searchFields = 'Name, Founded'; // Comma-separated list of fields to search against in the SOQL query
     
     // Getter to ensure we always have a valid search field
     get effectiveSearchFields() {
