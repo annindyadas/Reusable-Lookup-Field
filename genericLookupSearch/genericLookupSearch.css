@@ -1,0 +1,81 @@
+/* Dropdown menu styling with z-index to ensure it appears above other elements */
+.slds-dropdown {
+    position: absolute;
+    z-index: 7000;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 0.5rem;
+}
+
+/* Fix icon positioning in the input */
+.slds-combobox__input-entity-icon {
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    position: absolute;
+}
+
+/* Ensure the input with selected value has proper styling */
+.slds-combobox__input-value {
+    padding-left: 2.25rem; /* Ensure text doesn't overlap icon */
+    border: none;
+}
+
+/* Add proper border to the inline selection container */
+.lookup-with-selection {
+    border: 1px solid #dddbda;
+    border-radius: 0.25rem;
+    background-color: white;
+}
+
+/* When the input has focus, show the proper focus styling */
+.lookup-with-selection:focus-within {
+    outline: none;
+    border-color: #1589ee;
+    box-shadow: 0 0 3px #0070d2;
+}
+
+/* Pill container styling for proper wrapping and overflow handling */
+.pills-container {
+    min-height: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    overflow-wrap: break-word;
+    width: 100%;
+    background-color: white;
+    padding: 0.25rem;
+}
+
+/* Style for multi-select mode - truncate long text */
+.slds-pill__label {
+    max-width: 180px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* Ensure pills have proper styling, borders, and don't overflow */
+.slds-pill {
+    margin: 0.125rem;
+    max-width: calc(100% - 0.25rem);
+    background-color: #f3f3f3;
+    border: 1px solid #dddbda;
+    border-radius: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem;
+}
+
+/* Styling for the icon in the selection UI */
+.slds-combobox__input-entity-icon lightning-icon {
+    --sds-c-icon-color-foreground-default: white;
+    --sds-c-icon-color-background: rgb(21, 137, 238);
+}
+
+/* Styling for additional info display in dropdown */
+.slds-listbox__option .slds-text-body_small {
+    display: inline-block;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    margin-top: 0.125rem;
+}
