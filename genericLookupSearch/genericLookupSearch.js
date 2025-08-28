@@ -55,14 +55,14 @@ import { LightningElement, api, track } from 'lwc';
 import searchRecords from '@salesforce/apex/LookupSearchController.searchRecords';
 
 export default class GenericLookupSearch extends LightningElement {
-    @api objectApiName = 'Account'; //Account - Default object API name, can be overridden
-    @api fieldApiName = 'Name'; // Name - Default field to use for displaying results (primary display field)
-    @api iconName = 'standard:account'; //standard:account
-    @api label = 'Account'; // Account
-    @api placeholder = 'Search...'; //Search...
-    @api messageWhenValueMissing = 'Complete this field.'; //Complete this field.
+    @api objectApiName = ''; //Account - Default object API name, can be overridden
+    @api primaryDisplayField = ''; // Name - Default field to use for displaying results (primary display field)
+    @api iconName = ''; //standard:account
+    @api label = ''; // Account
+    @api placeholder = ''; //Search...
+    @api messageWhenValueMissing = ''; //Complete this field.
     @api isRequired = false;
-    @api recordType = 'Account'; //Account- Default record type, can be overridden; developer name is needed here
+    @api recordType = ''; //Account- Default record type, can be overridden; developer name is needed here
     @api multiSelect = false; // Allow multiple selections (defaults to false)
     @api showSelectedPills = false; // Whether to show selected pills below the input
     
@@ -73,14 +73,36 @@ export default class GenericLookupSearch extends LightningElement {
     @track isSearching = false;
     @track hasRendered = false; // Track if component has been rendered
 
-    @api additionalInfoFields = 'Industry, Location__c'; // Comma-separated list of additional fields to display in search results
-    @api searchFields = 'Name, Founded'; // Comma-separated list of fields to search against in the SOQL query
+    @api additionalDisplayFields = ''; // Comma-separated list of additional fields to display in search results
+    @api searchFields = ''; // Comma-separated list of fields to search against in the SOQL query
+    
+    // For backward compatibility with existing implementations
+    @api 
+    get fieldApiName() {
+        return this.primaryDisplayField;
+    }
+    set fieldApiName(value) {
+        this.primaryDisplayField = value;
+    }
+    
+    @api 
+    get additionalInfoFields() {
+        return this.additionalDisplayFields;
+    }
+    set additionalInfoFields(value) {
+        this.additionalDisplayFields = value;
+    }
     
     // Getter to ensure we always have a valid search field
     get effectiveSearchFields() {
         return this.searchFields ? this.searchFields : 'Name';
     }
     // Computed properties
+
+    get isActuallyRequired() {
+        // Support both boolean true and string "true"
+        return this.isRequired === true || this.isRequired === "true";
+    }
     get showNoResults() {
         return !this.isSearching && this.searchResults.length === 0 && this.searchTerm.length > 1;
     }
@@ -148,23 +170,32 @@ export default class GenericLookupSearch extends LightningElement {
         // Call Apex imperative method
         searchRecords({ 
             objectName: this.objectApiName, 
-            searchField: this.fieldApiName, // Used for display and ordering results
+            primaryDisplayField: this.primaryDisplayField, // Field to use for display
             searchTerm: this.searchTerm,
             recordType: this.recordType,
-            additionalFields: this.additionalInfoFields, // Pass additional fields to display
-            searchFields: this.effectiveSearchFields // Fields to search against (required)
+            additionalDisplayFields: this.additionalDisplayFields, // Additional fields to display
+            searchFields: this.effectiveSearchFields // Fields to search against
         })
         .then(results => {
             // Process the results to add display field and additional fields
             this.searchResults = results.map(result => {
-                // Get the display value using the specified fieldApiName, fallback to Name if needed
-                const displayValue = result[this.fieldApiName] !== undefined && result[this.fieldApiName] !== null ? result[this.fieldApiName] : result.Name;
+                // Get the display value - this will access the field directly in the result object
+                // For custom fields like DBG_DUNSNumber__c, they are returned with this exact casing
+                let displayValue;
                 
-                // Prepare additional info array if additionalInfoFields are provided
+                if (this.primaryDisplayField && result.hasOwnProperty(this.primaryDisplayField)) {
+                    // Use the specified field if it exists
+                    displayValue = result[this.primaryDisplayField];
+                } else {
+                    // Fallback to Name field
+                    displayValue = result.Name;
+                }
+                
+                // Prepare additional info array if additionalDisplayFields are provided
                 let additionalInfo = [];
                 
-                if (this.additionalInfoFields) {
-                    const fieldsArray = this.additionalInfoFields.split(',').map(field => field.trim());
+                if (this.additionalDisplayFields) {
+                    const fieldsArray = this.additionalDisplayFields.split(',').map(field => field.trim());
                     
                     fieldsArray.forEach(field => {
                         // Check if the field exists on the result
@@ -188,6 +219,7 @@ export default class GenericLookupSearch extends LightningElement {
             this.showResults = true; // Always show the dropdown when we have results or when showing "no results" message
         })
         .catch(error => {
+            // Handle and log errors
             console.error('Error searching records:', error);
             this.searchResults = [];
             this.showResults = true; // Keep dropdown open to show "no results" message
@@ -307,17 +339,7 @@ export default class GenericLookupSearch extends LightningElement {
     renderedCallback() {
         if (!this.hasRendered) {
             this.hasRendered = true;
-            console.log('Component rendered, setting up event listeners');
-            
-            // Debug the initial state
-            console.log('Initial state:', {
-                objectApiName: this.objectApiName,
-                fieldApiName: this.fieldApiName,
-                searchTerm: this.searchTerm,
-                searchResults: this.searchResults,
-                showResults: this.showResults,
-                multiSelect: this.multiSelect
-            });
+            // Component is now rendered
         }
     }
     
@@ -328,28 +350,8 @@ export default class GenericLookupSearch extends LightningElement {
     
     // Connect the component to document click events when inserted into the DOM
     connectedCallback() {
-        // Log all component properties for debugging
-        console.log('Component connected, raw properties:', {
-            multiSelect: this.multiSelect,
-            multiSelectType: typeof this.multiSelect,
-            showSelectedPills: this.showSelectedPills,
-            showSelectedPillsType: typeof this.showSelectedPills,
-            objectApiName: this.objectApiName,
-            fieldApiName: this.fieldApiName,
-            recordType: this.recordType
-        });
-        
-        // Log the interpreted boolean values using our getters
-        console.log('Interpreted boolean values:', {
-            isMultiSelect: this.isMultiSelect,
-            showPills: this.showPills
-        });
-        
-        // No need to force multiSelect to a boolean anymore, since we use the isMultiSelect getter
-        
         // Extra safety check for single-select mode - ensure array has at most 1 item
         if (!this.isMultiSelect && this.selectedRecords.length > 1) {
-            console.warn('Initial state has multiple records in single-select mode, keeping only the most recent');
             this.selectedRecords = this.selectedRecords.slice(-1);
         }
         
@@ -365,8 +367,6 @@ export default class GenericLookupSearch extends LightningElement {
     // Prevent clicks inside the component from closing the dropdown
     handleContainerClick(event) {
         event.stopPropagation();
-        // Verify we're using the correct mode
-        console.log('Container clicked, multiSelect mode =', this.isMultiSelect);
     }
     
     // Handler for clearing the inline selection (when clicking the X in the input)
