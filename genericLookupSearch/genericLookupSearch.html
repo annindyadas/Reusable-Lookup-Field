@@ -1,7 +1,7 @@
 <template>
     <div class="slds-form-element" onclick={handleContainerClick}>
         <label if:true={label} class="slds-form-element__label">
-            <abbr if:true={isRequired} class="slds-required" title="required">*</abbr>
+            <abbr if:true={isActuallyRequired} class="slds-required" title="required">*</abbr>
             {label}
         </label>
         <div class="slds-form-element__control">
@@ -76,7 +76,7 @@
                                         <span class="slds-media__body">
                                             <div class="slds-truncate slds-m-bottom_xx-small">{result.displayValue}</div>
                                             <!-- Display additional info fields if they exist and have values -->
-                                            <!-- <template if:true={result.additionalInfo}>
+                                            <template if:true={result.additionalInfo}>
                                                 <div class="slds-grid slds-wrap">
                                                     <template for:each={result.additionalInfo} for:item="info">
                                                         <span key={info.field} class="slds-truncate slds-text-body_small slds-text-color_weak slds-p-right_small">
@@ -84,7 +84,7 @@
                                                         </span>
                                                     </template>
                                                 </div>
-                                            </template> -->
+                                            </template>
                                         </span>
                                     </div>
                                 </li>
