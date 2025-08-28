@@ -13,6 +13,7 @@ A flexible, reusable Lightning Web Component for Salesforce that provides enhanc
   - Single-select with pills
   - Single-select with inline display
 - **Cross-Field Search**: Search across multiple fields simultaneously
+- **Dynamic field selection**: Customize primary display fields and search fields
 - **Additional Field Information**: Display supplementary fields beneath search results
 - **Customization Options**: Configure icons, labels, placeholders, and more
 - **Rich Selection Display**: Show selections as pills or inline with easy removal
