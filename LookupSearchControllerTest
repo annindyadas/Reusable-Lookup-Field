@@ -1,0 +1,238 @@
+@isTest
+private class LookupSearchControllerTest {
+    @isTest
+    static void testSearchRecords() {
+        Account testAccount = new Account(
+            Name = 'TESTACCT9999',
+            Industry = 'Technology',
+            Phone = '123-456-7890'
+        );
+        insert testAccount;
+        
+        List<Account> allAccounts = [SELECT Id, Name, Industry, Phone FROM Account];
+        System.debug('All accounts before search: ' + allAccounts);
+        System.debug('Account count: ' + allAccounts.size());
+        
+        Test.startTest();
+        List<SObject> results = LookupSearchController.searchRecords(
+            'Account',
+            'Name',
+            'ACCT',
+            '',
+            'Industry,Phone',
+            'Name'
+        );
+        Test.stopTest();
+        
+        System.debug('Test account ID: ' + testAccount.Id);
+        System.debug('Test account Name: ' + testAccount.Name);
+        System.debug('Results count: ' + results.size());
+        if (!results.isEmpty()) {
+            System.debug('Result account ID: ' + results[0].Id);
+            System.debug('Result account Name: ' + ((Account)results[0]).Name);
+        } else {
+            String query = 'SELECT Id, Name, Industry, Phone FROM Account WHERE Name LIKE \'%ACCT%\' ORDER BY Name ASC LIMIT 10';
+            List<SObject> debugResults = Database.query(query);
+            System.debug('Debug query results: ' + debugResults);
+            System.debug('Debug query count: ' + debugResults.size());
+        }
+        
+        System.assertEquals(1, results.size(), 'Should find one account');
+        if (!results.isEmpty()) {
+            System.assertEquals(testAccount.Id, results[0].Id, 'Should find the test account');
+            
+            Account foundAccount = (Account)results[0];
+            System.assertEquals('Technology', foundAccount.Industry, 'Industry should be included');
+            System.assertEquals('123-456-7890', foundAccount.Phone, 'Phone should be included');
+        }
+    }
+    
+    @isTest
+    static void testSearchRecordsWithRecordType() {
+        Test.startTest();
+        List<SObject> results = LookupSearchController.searchRecords(
+            'Account',
+            'Name',
+            'NonExistentRecord',
+            'Business',
+            '',
+            'Name'
+        );
+        Test.stopTest();
+        
+        System.assertEquals(0, results.size(), 'Should find no accounts');
+    }
+    
+    @isTest
+    static void testSearchRecordsWithInvalidParams() {
+        Test.startTest();
+        List<SObject> results1 = LookupSearchController.searchRecords(
+            '',
+            'Name',
+            'Test',
+            '',
+            '',
+            'Name'
+        );
+        
+        List<SObject> results2 = LookupSearchController.searchRecords(
+            'Account',
+            'Name',
+            '',
+            '',
+            '',
+            'Name'
+        );
+        
+        List<SObject> results3 = LookupSearchController.searchRecords(
+            'Account',
+            'Name',
+            'Test',
+            '',
+            '',
+            ''
+        );
+        Test.stopTest();
+        
+        System.assertEquals(0, results1.size(), 'Empty object name should return empty list');
+        System.assertEquals(0, results2.size(), 'Empty search term should return empty list');
+        System.assertEquals(0, results3.size(), 'Empty search fields should return empty list');
+    }
+    
+    @isTest
+    static void testSearchRecordsWithCustomField() {
+        Account testAccount = new Account(
+            Name = 'Custom Field Test Account',
+            Phone = '555-1234'
+        );
+        insert testAccount;
+        
+        Test.startTest();
+        List<SObject> results = LookupSearchController.searchRecords(
+            'Account',
+            'Phone',
+            'Field Test',
+            '',
+            '',
+            'Name'
+        );
+        Test.stopTest();
+        
+        System.assertEquals(1, results.size(), 'Should find one account');
+        System.assertEquals(testAccount.Id, results[0].Id, 'Should find the test account');
+        
+        Account foundAccount = (Account)results[0];
+        System.assertEquals('555-1234', foundAccount.Phone, 'Phone should be included and match');
+    }
+    
+    @isTest
+    static void testExceptionHandling() {
+        Test.startTest();
+        List<SObject> results = LookupSearchController.searchRecords(
+            'InvalidObjectName__c',
+            'Name',
+            'Test',
+            '',
+            '',
+            'Name'
+        );
+        Test.stopTest();
+        
+        System.assertEquals(0, results.size(), 'Exception should result in empty list');
+    }
+    
+    @isTest
+    static void testAdditionalDisplayFields() {
+        Account testAccount = new Account(
+            Name = 'Multi Fields Test',
+            Phone = '555-6789',
+            Industry = 'Technology',
+            BillingCity = 'San Francisco'
+        );
+        insert testAccount;
+        
+        Test.startTest();
+        List<SObject> results = LookupSearchController.searchRecords(
+            'Account',
+            'Name',
+            'Fields',
+            '',
+            'Phone,Industry,BillingCity',
+            'Name'
+        );
+        Test.stopTest();
+        
+        System.debug('Additional fields test - Test account ID: ' + testAccount.Id);
+        System.debug('Additional fields test - Test account Name: ' + testAccount.Name);
+        System.debug('Additional fields test - Results count: ' + results.size());
+        
+        System.assertEquals(1, results.size(), 'Should find one account');
+        
+        Account foundAccount = (Account)results[0];
+        System.assertEquals('555-6789', foundAccount.Phone, 'Phone should be included');
+        System.assertEquals('Technology', foundAccount.Industry, 'Industry should be included');
+        System.assertEquals('San Francisco', foundAccount.BillingCity, 'BillingCity should be included');
+    }
+    
+    @isTest
+    static void testMultipleSearchFields() {
+        Account testAccount = new Account(
+            Name = 'Regular Name',
+            Industry = 'UNIQUETEST Industry',
+            Phone = '999-UNIQUETEST'
+        );
+        insert testAccount;
+        
+        List<Account> checkAccounts = [SELECT Id, Name, Industry, Phone FROM Account WHERE Industry LIKE '%UNIQUETEST%'];
+        System.debug('Verification - Accounts matching UNIQUETEST in industry: ' + checkAccounts.size());
+        for (Account acc : checkAccounts) {
+            System.debug('Verification - Account found: ' + acc.Id + ' - ' + acc.Name + ' | ' + acc.Industry);
+        }
+        
+        Test.startTest();
+        List<SObject> results = LookupSearchController.searchRecords(
+            'Account',
+            'Name',
+            'UNIQUETEST',
+            '',
+            'Industry,Phone',
+            'Industry,Phone'
+        );
+        Test.stopTest();
+        
+        System.debug('Multi-field test - Test account ID: ' + testAccount.Id);
+        System.debug('Multi-field test - Test account Name: ' + testAccount.Name);
+        System.debug('Multi-field test - Test account Industry: ' + testAccount.Industry);
+        System.debug('Multi-field test - Test account Phone: ' + testAccount.Phone);
+        System.debug('Multi-field test - Results count: ' + results.size());
+        
+        if (results.isEmpty()) {
+            String debugQuery = 'SELECT Id, Name, Industry, Phone FROM Account WHERE Industry LIKE \'%UNIQUETEST%\' OR Phone LIKE \'%UNIQUETEST%\'';
+            List<Account> debugResults = Database.query(debugQuery);
+            System.debug('Direct debug query: ' + debugQuery);
+            System.debug('Direct debug results: ' + debugResults.size() + ' accounts found');
+            for (Account acc : debugResults) {
+                System.debug('Debug - Account: ' + acc.Id + ' - ' + acc.Name + ' | ' + acc.Industry + ' | ' + acc.Phone);
+            }
+            
+            System.debug('Controller would execute query like: SELECT Id, Name, Industry, Phone FROM Account WHERE (Industry LIKE \'%UNIQUETEST%\' OR Phone LIKE \'%UNIQUETEST%\') ORDER BY Name ASC LIMIT 10');
+        }
+        
+        System.assertEquals(1, results.size(), 'Should find one account via Industry and Phone search');
+        
+        if (!results.isEmpty()) {
+            Boolean foundExpectedRecord = false;
+            for (SObject obj : results) {
+                Account acc = (Account)obj;
+                if (acc.Id == testAccount.Id) {
+                    foundExpectedRecord = true;
+                    System.assertEquals('UNIQUETEST Industry', acc.Industry, 'Industry should be included and match');
+                    System.assertEquals('999-UNIQUETEST', acc.Phone, 'Phone should be included and match');
+                    break;
+                }
+            }
+            
+            System.assert(foundExpectedRecord, 'Should find the specific test account we created');
+        }
+    }
+}
